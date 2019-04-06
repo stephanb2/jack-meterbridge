@@ -28,7 +28,7 @@ int gfx_thread_vu(void *foo)
 	float theta;
 
 	for (i=0; i<MAX_METERS; i++) {
-                lp[i] = 0.0f;
+        lp[i] = 0.0f;
 		buf_rect[i].x = dest[i].x + 30;
 		buf_rect[i].y = dest[i].y + 70;
 		buf_rect[i].w = 168;

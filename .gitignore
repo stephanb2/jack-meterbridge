@@ -3,4 +3,9 @@
 *.obj
 *.elf
 
+# makefile
+**/.deps/
+*.Po
 
+# app
+src/meterbridge

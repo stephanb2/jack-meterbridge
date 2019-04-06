@@ -8,7 +8,7 @@
 
 extern SDL_Surface *screen;
 extern SDL_Surface *image, *meter, *meter_buf;
-extern SDL_Rect win, buf_rect[MAX_METERS], dest[MAX_METERS];
+extern SDL_Rect win, dest[MAX_METERS];
 
 extern jack_port_t *input_ports[MAX_METERS];
 extern jack_port_t *output_ports[MAX_METERS];

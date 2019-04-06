@@ -4,7 +4,7 @@
 /* set a pixel on an SDL_Surface, assumes that the surface is 32bit RGBA,
  * ordered ABGR (I think), probably wont work on bigendian systems */
 
-inline void set_rgba(SDL_Surface *surface, Uint32 x, Uint32 y, Uint32 col)
+ void set_rgba(SDL_Surface *surface, Uint32 x, Uint32 y, Uint32 col)
 {
 	Uint32 *bufp = (Uint32 *)surface->pixels + y*surface->pitch/4 + x;
 	*bufp = col;
