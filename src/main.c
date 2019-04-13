@@ -28,12 +28,12 @@
 #define MET_SCO 5
 
 void make_channel(jack_client_t *client, int i, char *port_name);
-void cleanup(void);
+void cleanup(jack_client_t *client);
 int store(char *path, void *data);
 
-SDL_Thread *gt;
-SDL_Surface *screen;
-SDL_Surface *background_image, *meter, *meter_buf;
+static SDL_Thread *gt;
+static SDL_Surface *background_image;
+SDL_Surface *screen, *meter, *meter_buf;
 SDL_Rect win, dest[MAX_METERS];
 
 int num_meters = 0;
@@ -41,14 +41,17 @@ int num_scopes = 0;
 int meter_freeze = 0;
 float env[MAX_METERS];
 
-char *meter_name = "ppm";
-char client_name[256];
-
 float bias = 1.0f; // To allow for ref level changes
 
 jack_port_t *input_ports[MAX_METERS];
 jack_port_t *output_ports[MAX_METERS];
-jack_client_t *client;
+
+static char *meter_name = "ppm";
+static char client_name[256];
+
+
+// TODO: 
+// https://github.com/jackaudio/example-clients/blob/master/simple_client.c
 
 int main(int argc, char *argv[])
 {
@@ -62,6 +65,7 @@ int main(int argc, char *argv[])
 	int x = 0, y = 0;
 	char window_name[256];
 	char *us_client_name = NULL;
+	jack_client_t *client;
 
 	num_meters = argc;
 	while ((opt = getopt(argc, argv, "t:r:c:n:h")) != -1) {
@@ -266,7 +270,7 @@ int main(int argc, char *argv[])
 	while (SDL_WaitEvent(&event)) {
 		switch (event.type) {
 			case SDL_QUIT:
-				cleanup();
+				cleanup(client);
 				break;
 			case 5:
 				meter_freeze = 1;
@@ -280,7 +284,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	cleanup();
+	cleanup(client);
 
 	/* We can't ever get here, but it keeps gcc quiet */
 	return 0;
@@ -298,14 +302,14 @@ void make_channel(jack_client_t *client, int i, char *port_name)
 	snprintf(in_name, 255, "meter_%d", i+1);
 	if (!(input_ports[i] = jack_port_register(client, in_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0))) {
 		fprintf(stderr, "Cannot register '%s'\n", in_name);
-		cleanup();
+		cleanup(client);
 	}
 	snprintf(in_name, 255, "%s:meter_%d", client_name, i+1);
 
 	snprintf(out_name, 255, "monitor_%d", i+1);
 	if (!(output_ports[i] = jack_port_register(client, out_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0))) {
 		fprintf(stderr, "Cannot register '%s'\n", out_name);
-		cleanup();
+		cleanup(client);
 	}
 	snprintf(out_name, 255, "%s:monitor_%d", client_name, i+1);
 	
@@ -330,7 +334,7 @@ void make_channel(jack_client_t *client, int i, char *port_name)
 				//fprintf(stderr, "Broke '%s' to '%s'\n", possible_ports[j], port_name);
 				if (jack_connect(client, connections[j], in_name)) {
 					fprintf(stderr, "Could not connect '%s' to '%s'\n", connections[j], in_name);
-					cleanup();
+					cleanup(client);
 				}
 				//fprintf(stderr, "Connected '%s' to '%s'\n", possible_ports[j], in_name);
 			} else {
@@ -342,11 +346,11 @@ void make_channel(jack_client_t *client, int i, char *port_name)
 		//fprintf(stderr, "Connected '%s' to '%s'\n", out_name, port_name);
 	} else if (flags & JackPortIsOutput && jack_connect(client, port_name, jack_port_name(input_ports[i]))) {
 		fprintf(stderr, "Cannot connect port '%s' to '%s'\n", port_name, in_name);
-		cleanup();
+		cleanup(client);
 	}
 }
 
-void cleanup()
+void cleanup(jack_client_t *client)
 {
 	unsigned int i, j, l;
 	const char **all_iports, **all_oports;

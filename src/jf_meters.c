@@ -46,6 +46,8 @@ void load_graphics_jf()
 	meter_buf = find_image("jf-frame-overlay.png");
 }
 
+
+// TODO: use clip function
 int gfx_thread_jf(void *foo)
 {
 	unsigned int i, j;
@@ -66,24 +68,18 @@ int gfx_thread_jf(void *foo)
 
 	while (1) {
 		for (i=0; i<num_scopes; i++) {
-			int x=0, y=0, xm1, ym1;
+			int x=0, y=0;
 			SDL_Rect cor_rect;
 
 			SDL_FillRect(meter, buf_rect, trace);
                         SDL_BlitSurface(meter_buf, buf_rect, screen, buf_rect+i);
-                        for (j=0; j<RING_BUF_SIZE; j++) {
-				xm1 = x;
-				ym1 = y;
-
+            for (j=0; j<RING_BUF_SIZE; j++) {
 				/* A touch of lowpass filter to make it easier
 				 * to read */
-				lp[i*2] = lp[i*2] * 0.9f + ring_buf[i*2][j] *
-					bias * 0.1f;
-				lp[i*2+1] = lp[i*2+1] * 0.9f +
-					ring_buf[i*2+1][j] * bias * 0.1f;
+				lp[i*2] = lp[i*2] * 0.9f + ring_buf[i*2][j] *bias * 0.1f;
+				lp[i*2+1] = lp[i*2+1] * 0.9f + ring_buf[i*2+1][j] * bias * 0.1f;
 
-				x = lp[i*2+1] * 80.0f * 0.707f -
-					lp[i*2] * 80.0f * 0.707f;
+				x = lp[i*2+1] * 80.0f * 0.707f - lp[i*2] * 80.0f * 0.707f;
 				if (x > 100) {
 					x = 100;
 					continue;
@@ -92,8 +88,7 @@ int gfx_thread_jf(void *foo)
 					continue;
 				}
 
-				y = lp[i*2+1] * -80.0f * 0.707f +
-					lp[i*2] * -80.0f * 0.707f;
+				y = lp[i*2+1] * -80.0f * 0.707f + lp[i*2] * -80.0f * 0.707f;
 				if (y > 99) {
 					y = 99;
 					continue;
@@ -103,12 +98,12 @@ int gfx_thread_jf(void *foo)
 				}
 
 				set_rgba(screen, buf_rect[i].x+100+x, buf_rect[i].y+100+y, trace);
-#if 0
+				#if 0
 				if (j > 0) {
 					draw_line(screen, buf_rect[i].x+100+x,  buf_rect[i].y+100+y, buf_rect[i].x+100+xm1, buf_rect[i].y+100+ym1, trace);
 				}
-#endif
-                        }
+				#endif
+            }
 
 			/* Draw correlation meter */
 			tau_lp[i] = tau_lp[i] * 0.8f + tau((float *)ring_buf[i*2], (float *)ring_buf[i*2+1], RING_BUF_SIZE) * 0.2f;

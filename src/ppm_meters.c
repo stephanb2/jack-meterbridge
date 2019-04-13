@@ -8,8 +8,11 @@
 #include "find_image.h"
 #include "envelopes.h"
 
-static float lp[MAX_METERS];
+
 static SDL_Rect buf_rect[MAX_METERS];
+// TODO: derive decay from sdl_delay
+const static int sdl_delay = 80;
+const static float decay = 1.0f - 0.08f;
 
 void load_graphics_ppm()
 {
@@ -26,6 +29,7 @@ int gfx_thread_ppm(void *foo)
 	const Uint32 needle = SDL_MapRGB(meter->format, 0xD0, 0xD0, 0xD0);
 	const Uint32 aa = SDL_MapRGB(meter->format, 0x78, 0x78, 0x78);
 	float theta;
+	static float lp[MAX_METERS];
 
 	for (i=0; i<MAX_METERS; i++) {
 		lp[i] = 0.0f;
@@ -37,8 +41,9 @@ int gfx_thread_ppm(void *foo)
 
 	while (1) {
 		for (i=0; i<num_meters; i++) {
-			const float peak = env_read(i);
-			lp[i] = lp[i] * 0.7f + peak * bias * 0.3f;
+			const float peak = bias * env_read(i);
+			lp[i] = lp[i] * decay;
+			if (peak > lp[i]) lp[i] = 0.3f * lp[i] + 0.7f * peak;
 			theta = 1.09083f * log10f(lp[i]);
 
 			if (theta < -pi_4) theta = -pi_4;
@@ -53,7 +58,7 @@ int gfx_thread_ppm(void *foo)
 			SDL_BlitSurface(meter_buf, buf_rect, screen, buf_rect+i);
 		}
 		SDL_UpdateRects(screen, 1, &win);
-		SDL_Delay(100);
+		SDL_Delay(sdl_delay);
 	}
 
 	return 0;

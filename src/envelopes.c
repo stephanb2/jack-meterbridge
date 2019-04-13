@@ -87,14 +87,16 @@ int process_rms(jack_nframes_t nframes, void *arg)
 			rms_sums[port] += s;
 			rms_buffers[port][rms_pos] = s;
 			rms_pos = (rms_pos + 1) & (RMS_BUF_SIZE - 1);
-
-		} if (rms_sums[port] < 0.0f) {
-			/* This should never happnen, but can occasionally due
-			 * the the difference between the rms history and the
-			 * float sum. We clobber it just to make sure. */
+		}
+		
+		/* This should never happnen, but can occasionally due
+		 * the the difference between the rms history and the
+		 * float sum. We clobber it just to make sure. */
+		if (rms_sums[port] < 0.0f) {
 			rms_sums[port] = 0.0f;
-	       	}
-	       	env[port] = sqrtf(rms_sums[port] / (float)RMS_BUF_SIZE); }
+		}
+		env[port] = sqrtf(rms_sums[port] / (float)RMS_BUF_SIZE); 
+	}
 
 	return 0;
 }

@@ -12,6 +12,9 @@ int ptime[MAX_METERS];
 
 int iec_scale(float db);
 
+const static int sdl_delay = 80;
+const static float decay = 1.0f - 0.11f;
+
 void load_graphics_dpm()
 {
 	unsigned int i;
@@ -25,6 +28,7 @@ void load_graphics_dpm()
 	}
 }
 
+// TODO: this sale is not continuous
 int iec_scale(float db) {
          float def = 0.0f; /* Meter deflection %age */
  
@@ -33,15 +37,15 @@ int iec_scale(float db) {
          } else if (db < -60.0f) {
                  def = (db + 70.0f) * 0.25f;
          } else if (db < -50.0f) {
-                 def = (db + 60.0f) * 0.5f + 5.0f;
+                 def = (db + 60.0f) * 0.50f + 2.5f;
          } else if (db < -40.0f) {
-                 def = (db + 50.0f) * 0.75f + 7.5;
+                 def = (db + 50.0f) * 0.75f + 7.5f;
          } else if (db < -30.0f) {
-                 def = (db + 40.0f) * 1.5f + 15.0f;
+                 def = (db + 40.0f) * 1.50f + 15.0f;
          } else if (db < -20.0f) {
-                 def = (db + 30.0f) * 2.0f + 30.0f;
+                 def = (db + 30.0f) * 2.00f + 30.0f;
          } else if (db < 0.0f) {
-                 def = (db + 20.0f) * 2.5f + 50.0f;
+                 def = (db + 20.0f) * 2.50f + 50.0f;
          } else {
                  def = 100.0f;
          }
@@ -53,15 +57,19 @@ int gfx_thread_dpm(void *foo)
 {
 	unsigned int i;
 	int height;
+	static float lp[MAX_METERS];
 	SDL_Rect r;
 	Uint32 black = SDL_MapRGB(screen->format, 0, 0, 0);
 	Uint32 red = SDL_MapRGB(screen->format, 240, 0, 20);
+	Uint32 orange = SDL_MapRGB(screen->format, 240, 120, 0);
 	Uint32 yellow = SDL_MapRGB(screen->format, 220, 220, 20);
 
 	while (1) {
 		for (i=0; i<num_meters; i++) {
 			const float peak = env_read(i);
-			height = iec_scale(20.0f * log10f(peak * bias));
+			lp[i] = lp[i] * decay;
+			if (peak > lp[i]) lp[i] = peak;
+			height = iec_scale(20.0f * log10f(lp[i] * bias));
 			r.x = dest[i].x + 7;
 			r.y = dest[i].y + 5;
 			r.w = 9;
@@ -70,7 +78,7 @@ int gfx_thread_dpm(void *foo)
 
 			r.h = height;
 			r.y = dest[i].y + 205 - height;
-			SDL_FillRect(screen, &r, red);
+			SDL_FillRect(screen, &r, orange);
 
 			if (height > peaks[i]) {
 				peaks[i] = height;
@@ -86,7 +94,7 @@ int gfx_thread_dpm(void *foo)
 			SDL_FillRect(screen, &r, yellow);
 		}
 		SDL_UpdateRects(screen, 1, &win);
-		SDL_Delay(80);
+		SDL_Delay(sdl_delay);
 	}
 
 	return 0;

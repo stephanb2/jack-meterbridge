@@ -32,7 +32,7 @@ int gfx_thread_scope(void *foo)
 		for (i=0; i<num_scopes; i++) {
 			int x=0, y=128, ym1, base;
 
-                        SDL_BlitSurface(meter_buf, buf_rect, screen, buf_rect+i);
+            SDL_BlitSurface(meter_buf, buf_rect, screen, buf_rect+i);
 			for (base = 0; base < RING_BUF_SIZE - 257; base++) {
 				if (ring_buf[i][base] <= 0.0f &&
 						ring_buf[i][base+1] > 0.0f) {
@@ -40,7 +40,7 @@ int gfx_thread_scope(void *foo)
 				}
 			}
 			base++;
-                        for (x = 0; x < 233; x++) {
+            for (x = 0; x < 233; x++) {
 				ym1 = y;
 				y = (1.0f - ring_buf[i][x+base] * bias) * 118.0f;
 
@@ -55,7 +55,7 @@ int gfx_thread_scope(void *foo)
 				if (x > 0) {
 					draw_line(screen, buf_rect[i].x+x,  buf_rect[i].y+y, buf_rect[i].x+x-1, buf_rect[i].y+ym1, trace);
 				}
-                        }
+            }
 		}
 		SDL_UpdateRects(screen, 1, &win);
 		SDL_Delay(50);
