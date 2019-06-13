@@ -9,6 +9,9 @@ float rms_sums[MAX_METERS];
 float ring_buf[MAX_METERS][RING_BUF_SIZE];
 unsigned int rms_pos = 0;
 
+static float release, GAIN, ALPHA, a1, a2;
+
+
 float env_read(int port)
 {
 	float tmp = env[port];
@@ -17,9 +20,40 @@ float env_read(int port)
 	return tmp;
 }
 
+
+void init_peak(float fsamp) {
+	release = 1.0f - 4.8f / fsamp; //release
+	GAIN = 1.0f / 0.92158383f; // gain compensation @ 1kHz
+	ALPHA = 0.60f; // ratio between 2 lowpass filters
+	a1 = 200.0f / fsamp;
+	a2 = 980.0f / fsamp;
+}
+
+
+//TODO: derive sampling rate from jack client
+//TODO: pre-compute constants with init() function
+float peak_typeII(float x_in) {
+	static float y1 = 0.0f, y2 = 0.0f; // internal state
+	static float xr;
+
+	xr = fabs(x_in);
+	y1 = y1 * release;
+	y2 = y2 * release;
+	if (xr > y1) {
+		y1 += a1 * (xr - y1);
+	}
+	if (xr > y2) {
+		y2 += a2 * (xr - y2);
+	}
+	return GAIN * (ALPHA * y1 + (1.0f - ALPHA) * y2);
+}
+
+
 int process_peak(jack_nframes_t nframes, void *arg)
 {
 	unsigned int i, port;
+	int meter_type = *(int*) arg;
+	float s;
 
 	if (meter_freeze) {
 		return 0;
@@ -37,7 +71,12 @@ int process_peak(jack_nframes_t nframes, void *arg)
 		out = (jack_default_audio_sample_t *) jack_port_get_buffer(output_ports[port], nframes);
 
 		for (i = 0; i < nframes; i++) {
-			const float s = fabs(in[i]);
+			if (meter_type == MET_PPM) {
+				s = peak_typeII(in[i]);
+			} else {
+				s = fabs(in[i]);
+			}
+			
 			out[i] = in[i];
 			if (s > env[port]) {
 				env[port] = s;

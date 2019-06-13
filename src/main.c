@@ -21,11 +21,6 @@
 #include "jf_meters.h"
 #include "scope.h"
 
-#define MET_VU  1 // The meter display type
-#define MET_PPM 2
-#define MET_DPM 3
-#define MET_JF  4
-#define MET_SCO 5
 
 void make_channel(jack_client_t *client, int i, char *port_name);
 void cleanup(jack_client_t *client);
@@ -251,7 +246,8 @@ int main(int argc, char *argv[])
 	} else if (meter_type == MET_JF || meter_type == MET_SCO) {
 		jack_set_process_callback(client, process_ring, 0);
 	} else {
-		jack_set_process_callback(client, process_peak, 0);
+		init_peak(44100.0f);
+		jack_set_process_callback(client, process_peak, &meter_type);
 	}
 	// This is used to maually save the session, but the auto stuff
 	// does a better job anyway. Just here for testing

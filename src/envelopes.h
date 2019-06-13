@@ -14,5 +14,6 @@ int process_peak(jack_nframes_t nframes, void *arg);
 int process_rms(jack_nframes_t nframes, void *arg);
 int process_ring(jack_nframes_t nframes, void *arg);
 void init_buffers_rms();
+void init_peak(float fsamp);
 
 #endif

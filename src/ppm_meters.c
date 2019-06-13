@@ -10,9 +10,11 @@
 
 
 static SDL_Rect buf_rect[MAX_METERS];
-// TODO: derive decay from sdl_delay
-const static int sdl_delay = 80;
-const static float decay = 1.0f - 0.08f;
+// TODO: derive decay from sdl_delay. This should be 6 PPM = 24dB / 2.8s
+// 80ms : 24dB / 2.8 * 0.08 = 0.6857 dB /frame -> decay = 10 ** (-0.6857 / 20) = 0.92409f
+// 50ms : 0.42857 db / frame --> decay = 0.951856f
+const static int sdl_delay = 50;
+const static float decay = 0.951856f;
 
 void load_graphics_ppm()
 {
@@ -43,7 +45,8 @@ int gfx_thread_ppm(void *foo)
 		for (i=0; i<num_meters; i++) {
 			const float peak = bias * env_read(i);
 			lp[i] = lp[i] * decay;
-			if (peak > lp[i]) lp[i] = 0.3f * lp[i] + 0.7f * peak;
+			//if (peak > lp[i]) lp[i] = 0.3f * lp[i] + 0.7f * peak;
+			if (peak > lp[i]) lp[i] = peak;
 			theta = 1.09083f * log10f(lp[i]);
 
 			if (theta < -pi_4) theta = -pi_4;
